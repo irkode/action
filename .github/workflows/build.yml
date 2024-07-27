@@ -73,7 +73,7 @@ jobs:
             if (Test-Path .\assets\__MACOSX) { Remove-Item .\assets\__MACOSX -ErrorAction SilentlyContinue -Recurse }
             Rename-Item .\assets\$bulmaFolder "bulma"
             if (-Not (Test-Path ./assets/bulma -PathType Container)) { throw "missing folder: assets/bulma folder"}
-            "`$BULMA_VERSION='$($BulmaVersion)'" | Add-Content -Encoding utf8 -Append $GITHUB_ENV
+            "`$BULMA_VERSION='$($BulmaVersion)'" | Add-Content -Encoding utf8 $GITHUB_ENV
           }
           Get-ChildItem .
           Get-ChildItem .\assets
