@@ -79,7 +79,7 @@ jobs:
           }
 
       - name: Create Release
-        if: ${{ env.BULMA_VERSION != "NONE" }}
+        if: ${{ env.BULMA_VERSION != 'NONE' }}
         run: |
           Write-Host "Creating Release for $ENV:BULMA_VERSION"
           $BulmaVersion = "$ENV:BULMA_VERSION"
