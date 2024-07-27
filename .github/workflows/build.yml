@@ -28,9 +28,9 @@ jobs:
         run: |
           git fetch --tags
           git config --local core.autocrlf "false"
-          git config --local user.name ${{ GH_USERNAME }}
-          git config --global user.email ${{ GH_USERMAIL }}
-          git config --global user.signingkey ${{ GH_SIGNING_KEY }}
+          git config --local user.name ${{ secrets.GH_USERNAME }}
+          git config --global user.email ${{ secrets.GH_USERMAIL }}
+          git config --global user.signingkey ${{ secrets.GH_SIGNING_KEY }}
       - name: Init scripts
         run: |
           [void](New-Item -Type Directory ./src -ErrorAction Stop)
