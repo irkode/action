@@ -62,6 +62,7 @@ jobs:
                 }
              } | Sort-Object -Property version
           }
+          $BulmaReleases | Format-Table
            ./sr/build.ps1 -ErrorAction Stop
       - name: Create Release
         run: |
