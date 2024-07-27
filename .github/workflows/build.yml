@@ -88,3 +88,5 @@ jobs:
           git commit -S -m "add Bulma v$BulmaVersion"
           git tag -s -a "v$BulmaVersion" -m "packed Bulma release v$BulmaVersion"
           git push --tags
+        env:
+          GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
