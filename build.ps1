@@ -28,8 +28,9 @@ foreach ($release in $BulmaReleases) {
    }
 }
 $bulmaFolder = (Get-Item $archive).Basename
-Remove-Item -Recurse .\assets
+[void](Remove-Item -Recurse .\assets -ErrorAction SilentlyContinue)
 if ( Test-Path .\assets) { throw ".\assets should not exist"}
 Expand-Archive -LiteralPath $archive -DestinationPath .
 Rename-Item $bulmaFolder "assets"
-Remove-Item __MACOSX -ErrorAction SilentlyContinue -Recurse
+[void](Remove-Item __MACOSX -ErrorAction SilentlyContinue -Recurse)
+git status
