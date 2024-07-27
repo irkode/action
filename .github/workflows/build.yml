@@ -80,7 +80,7 @@ jobs:
 
       - name: Create Release
         run: |
-          Write-Host "Creating Release vor $ENV:{BULMA_VERSION}
+          Write-Host "Creating Release vor $ENV:BULMA_VERSION"
           git add assets\bulma
           git status
           Write-Output "committing..."
