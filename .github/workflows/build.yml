@@ -48,9 +48,13 @@ jobs:
 
       - name: Download Bulma
         run: |
+          $Tags = git tag
+          # get list of Bulma Releases
           $BULMA_URL = "https://api.github.com/repos/jgthms/bulma"
-          $BulmaReleases = Invoke-RestMethod -FollowRelLink -Uri "$BULMA_URL/releases?per_page=100" | %{$_}| ForEach-Object {
-            if ($_.tag_name) {
+          $BulmaRelease = Invoke-RestMethod -FollowRelLink -Uri "$BULMA_URL/releases?per_page=100" | %{$_}| ForEach-Object {
+            if (($_.tag_name) -and ($Tags -contains $tag_name) {
+              Write-Output "already packed: Bulma $tag_name"
+            } else {
                [PSCustomObject]@{
                   version = [version]$_.tag_name
                   archive = [string]$_.assets.name
@@ -59,16 +63,20 @@ jobs:
             } else {
                Write-Warning "found untagged release for $($_.assets.name)"
             }
-          } | Sort-Object -Property version
-          $BulmaReleases | Format-Table | Out-Host
-          $Tags = git tag
-          foreach ($release in $BulmaReleases) {
-            Write-Output $Release
-            if ($tags -notcontains $release.version) {
-              Write-Output "Downloading..."
-              break;
-            }
+          } | Sort-Object -Property version | Select-Object -First 1
+          if ($BulmaRelease) {
+            Write-Output "Downloading Bulma $($BulmaRelease.version)
+            [void](New-Item -Type Directory ./assets -ErrorAction Stop)
+            if (-Not (Test-Path .\assets -PathType Container)) { throw ".\assets should exist"}
+            Expand-Archive -LiteralPath $archive -DestinationPath .\assets
+            if (Test-Path .\assets\__MACOSX) { Remove-Item .\assets\__MACOSX -ErrorAction SilentlyContinue -Recurse }
+            Rename-Item .\assets\$bulmaFolder "bulma"
+            if (-Not (Test-Path ./assets/bulma -PathType Container)) { throw "missing ./assets/bulma folder"}
+            "BULMAVERSION='$($BulmaVersion)'" | Set-Content -Append $GITHUB_ENV
           }
+          Get-ChildItem .
+          Get-ChildItem .\assets
+
       - name: Create Release
         run: |
           git add assets\bulma
