@@ -35,9 +35,49 @@ jobs:
         run: |
           [void](New-Item -Type Directory ./src -ErrorAction Stop)
           Copy-Item ./build.ps1 ./src -ErrorAction Stop
-      - name: Add Bulma release
+      - name: Prepare repository
         run: |
-          ./src/build.ps1 -ErrorAction Stop
+          Remove-Item -Recurse .\assets -ErrorAction SilentlyContinue
+          Remove-Item -Recurse .\.github -ErrorAction SilentlyContinue
+          Remove-Item .\.gitignore -ErrorAction SilentlyContinue
+          Remove-Item .\build.ps1 -ErrorAction SilentlyContinue
+          if (Test-Path .\assets) { throw ".\assets should not exist"}
+          if (Test-Path .\build.ps1) { throw ".\build.ps1 should not exist"}
+          if (Test-Path .\.gitignore) { throw ".\assets should not exist"}
+          if (Test-Path .\.github) { throw ".\assets should not exist"}
+
+      - name: Download Bulma
+        run: |
+          $BULMA_URL = "https://api.github.com/repos/jgthms/bulma"
+          {
+             $BulmaReleases = Invoke-RestMethod -FollowRelLink -Uri "$BULMA_URL/releases?per_page=100" | %{$_}| ForEach-Object {
+                if ($_.tag_name) {
+                   [PSCustomObject]@{
+                      version = [version]$_.tag_name
+                      archive = [string]$_.assets.name
+                      download = [string]$_.assets.browser_download_url
+                   }
+                } else {
+                   Write-Warning "found untagged release for $($_.assets.name)"
+                }
+             } | Sort-Object -Property version
+          }
+           ./sr/build.ps1 -ErrorAction Stop
+      - name: Create Release
+        run: |
+          git add assets\bulma
+          Write-Output "committing..."
+          git commit -m "add $bulmaFolder"
+          git push --tags 
+          git tag "v$($release.version)"
+          Write-Output "Cleanup ..."
+          git checkout main
+          git branch -D $bulmaFolder
+          git log --oneline -n 5
+          git tag
+          git branch
+          gh release create "v$($release.version)"
+
       - name: Cleanup
         run: |
           Remove-Item -Recurse -Force .\src
