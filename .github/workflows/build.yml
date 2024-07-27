@@ -1,45 +1,43 @@
 # This is a basic workflow to help you get started with Actions
 
-name: Build Bulma4Hugo
+name: Build Bulma 4 Hugo
 
 # Controls when the workflow will run
 on:
   # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
     branches: ["main"]
-  pull_request:
-    branches: ["main"]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# defaults:
-#   run:
-#     shell: powershell
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
-    runs-on: windows-2019
+    runs-on: windows-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    env:
+      GH_TOKEN: ${{ github.token }}
+    permissions:
+      contents: write
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
 
       # Runs a set of commands using the runners shell
+      - name: Configure Git
+        run: |
+          git fetch --tags
+          git config --local core.autocrlf "false"
+          git config --local user.name "irkode"
+          git config --global user.email "irkode@rikode.de"
       - name: Init scripts
         run: |
-          $PSVersionTable | Format-List | Out-Host
           [void](New-Item -Type Directory ./src -ErrorAction Stop)
           Copy-Item ./build.ps1 ./src -ErrorAction Stop
           Remove-Item ./build.ps1 -ErrorAction Stop
       - name: Package Bulma
-        run: | 
+        run: |
           ./src/build.ps1 -ErrorAction Stop
       - name: Cleanup
         run: |
           Remove-Item -Recurse -Force .\src
-          tree /f .
