@@ -64,19 +64,24 @@ jobs:
           } | Sort-Object -Property version | Select-Object -First 1
           if ($BulmaRelease) {
             Write-Output "Downloading Bulma $($BulmaRelease.version)"
+            $archive = Join-Path -Path $TEMPDIR -ChildPath $BulmaRelease.archive
+            Invoke-WebRequest -Uri $BulmaRelease.download -OutFile $archive
+            $bulmaFolder = (Get-Item $archive).Basename
+
             [void](New-Item -Type Directory ./assets -ErrorAction Stop)
             if (-Not (Test-Path .\assets -PathType Container)) { throw "missing folder: assets"}
             Expand-Archive -LiteralPath $archive -DestinationPath .\assets
             if (Test-Path .\assets\__MACOSX) { Remove-Item .\assets\__MACOSX -ErrorAction SilentlyContinue -Recurse }
             Rename-Item .\assets\$bulmaFolder "bulma"
             if (-Not (Test-Path ./assets/bulma -PathType Container)) { throw "missing folder: assets/bulma folder"}
-            "BULMAVERSION='$($BulmaVersion)'" | Set-Content -Append $GITHUB_ENV
+            "`$BULMA_VERSION='$($BulmaVersion)'" | Set-Content -Append $GITHUB_ENV
           }
           Get-ChildItem .
           Get-ChildItem .\assets
 
       - name: Create Release
         run: |
+          Write-Host "Creating Release vor $ENV:{BULMA_VERSION}
           git add assets\bulma
           git status
           Write-Output "committing..."
