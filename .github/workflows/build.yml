@@ -52,7 +52,7 @@ jobs:
           # get list of Bulma Releases
           $BULMA_URL = "https://api.github.com/repos/jgthms/bulma"
           $BulmaRelease = Invoke-RestMethod -FollowRelLink -Uri "$BULMA_URL/releases?per_page=100" | %{$_}| ForEach-Object {
-            if (($_.tag_name) -and ($Tags -contains $tag_name) {
+            if (($_.tag_name) -and ($Tags -contains $tag_name)) {
               Write-Output "already packed: Bulma $tag_name"
             } else {
                [PSCustomObject]@{
@@ -60,8 +60,6 @@ jobs:
                   archive = [string]$_.assets.name
                   download = [string]$_.assets.browser_download_url
               }
-            } else {
-               Write-Warning "found untagged release for $($_.assets.name)"
             }
           } | Sort-Object -Property version | Select-Object -First 1
           if ($BulmaRelease) {
