@@ -28,14 +28,14 @@ jobs:
         run: |
           git fetch --tags
           git config --local core.autocrlf "false"
-          git config --local user.name "irkode"
-          git config --global user.email "irkode@rikode.de"
+          git config --local user.name ${{ GH_USERNAME }}
+          git config --global user.email ${{ GH_USERMAIL }}
+          git config --global user.signingkey ${{ GH_SIGNING_KEY }}
       - name: Init scripts
         run: |
           [void](New-Item -Type Directory ./src -ErrorAction Stop)
           Copy-Item ./build.ps1 ./src -ErrorAction Stop
-          Remove-Item ./build.ps1 -ErrorAction Stop
-      - name: Package Bulma
+      - name: Add Bulma release
         run: |
           ./src/build.ps1 -ErrorAction Stop
       - name: Cleanup
