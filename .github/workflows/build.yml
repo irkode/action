@@ -49,35 +49,41 @@ jobs:
       - name: Download Bulma
         run: |
           $BULMA_URL = "https://api.github.com/repos/jgthms/bulma"
-          {
-             $BulmaReleases = Invoke-RestMethod -FollowRelLink -Uri "$BULMA_URL/releases?per_page=100" | %{$_}| ForEach-Object {
-                if ($_.tag_name) {
-                   [PSCustomObject]@{
-                      version = [version]$_.tag_name
-                      archive = [string]$_.assets.name
-                      download = [string]$_.assets.browser_download_url
-                   }
-                } else {
-                   Write-Warning "found untagged release for $($_.assets.name)"
-                }
-             } | Sort-Object -Property version
+          $BulmaReleases = Invoke-RestMethod -FollowRelLink -Uri "$BULMA_URL/releases?per_page=100" | %{$_}| ForEach-Object {
+            if ($_.tag_name) {
+               [PSCustomObject]@{
+                  version = [version]$_.tag_name
+                  archive = [string]$_.assets.name
+                  download = [string]$_.assets.browser_download_url
+              }
+            } else {
+               Write-Warning "found untagged release for $($_.assets.name)"
+            }
+          } | Sort-Object -Property version
+          $BulmaReleases | Format-Table | Out-Host
+          $Tags = git tag
+          foreach ($release in $BulmaReleases) {
+            Write-Output $Release
+            if ($tags -notcontains $release.version) {
+              Write-Output "Downloading..."
+              break;
+            }
           }
-          $BulmaReleases | Format-Table
-           ./sr/build.ps1 -ErrorAction Stop
       - name: Create Release
         run: |
           git add assets\bulma
+          git status
           Write-Output "committing..."
-          git commit -m "add $bulmaFolder"
-          git push --tags 
-          git tag "v$($release.version)"
-          Write-Output "Cleanup ..."
-          git checkout main
-          git branch -D $bulmaFolder
-          git log --oneline -n 5
-          git tag
-          git branch
-          gh release create "v$($release.version)"
+          #git commit -m "add $bulmaFolder"
+          #git push --tags 
+          #git tag "v$($release.version)"
+          #Write-Output "Cleanup ..."
+          #git checkout main
+          #git branch -D $bulmaFolder
+          #git log --oneline -n 5
+          #git tag
+          #git branch
+          #gh release create "v$($release.version)"
 
       - name: Cleanup
         run: |
