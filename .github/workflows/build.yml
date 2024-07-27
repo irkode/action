@@ -86,5 +86,5 @@ jobs:
           git checkout -b "bulma-$BulmaVersion"
           git add ./assets ./README.md ./LICENSE ./go.mod
           git commit -S -m "add Bulma v$BulmaVersion"
-          git tag -S -a "v$BulmaVersion" -m "packed Bulma release v$BulmaVersion"
+          git tag -s -a "v$BulmaVersion" -m "packed Bulma release v$BulmaVersion"
           git push --tags
