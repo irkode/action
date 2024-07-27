@@ -74,25 +74,17 @@ jobs:
             Rename-Item .\assets\$bulmaFolder "bulma"
             if (-Not (Test-Path ./assets/bulma -PathType Container)) { throw "missing folder: assets/bulma folder"}
             echo "BULMA_VERSION='$($BulmaRelease.version)'" | Out-File $Env:GITHUB_ENV -Append -Encoding utf8
+          } else {
+            echo "BULMA_VERSION='NONE'" | Out-File $Env:GITHUB_ENV -Append -Encoding utf8
           }
 
       - name: Create Release
+        if: $Env:BULMA_VERSION != 'NONE'
         run: |
-          Write-Host "Creating Release vor $ENV:BULMA_VERSION"
-          git add assets\bulma
-          git status
-          Write-Output "committing..."
-          #git commit -m "add $bulmaFolder"
-          #git push --tags 
-          #git tag "v$($release.version)"
-          #Write-Output "Cleanup ..."
-          #git checkout main
-          #git branch -D $bulmaFolder
-          #git log --oneline -n 5
-          #git tag
-          #git branch
-          #gh release create "v$($release.version)"
-
-      - name: Cleanup
-        run: |
-          Remove-Item -Recurse -Force .\src
+          Write-Host "Creating Release for $ENV:BULMA_VERSION"
+          $BulmaVersion = "$ENV:BULMA_VERSION"
+          git checkout -b "bulma-$BulmaVersion"
+          git add ./assets ./README.md ./LICENSE ./go.mod
+          git commit -S -m "add Bulma v$BulmaVersion"
+          git tag -S -a "v$BulmaVersion" -m "packed Bulma release v$BulmaVersion"
+          git push --tags
