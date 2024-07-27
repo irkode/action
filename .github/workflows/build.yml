@@ -1,45 +1,99 @@
 # This is a basic workflow to help you get started with Actions
 
-name: Build Bulma4Hugo
+name: Build Bulma 4 Hugo
 
 # Controls when the workflow will run
 on:
   # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
     branches: ["main"]
-  pull_request:
-    branches: ["main"]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# defaults:
-#   run:
-#     shell: powershell
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
-    runs-on: windows-2019
+    runs-on: windows-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    env:
+      GH_TOKEN: ${{ github.token }}
+    permissions:
+      contents: write
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
 
       # Runs a set of commands using the runners shell
-      - name: Init scripts
+      - name: Configure Git
         run: |
-          $PSVersionTable | Format-List | Out-Host
-          [void](New-Item -Type Directory ./src -ErrorAction Stop)
-          Copy-Item ./build.ps1 ./src -ErrorAction Stop
-          Remove-Item ./build.ps1 -ErrorAction Stop
-      - name: Package Bulma
-        run: | 
-          ./src/build.ps1 -ErrorAction Stop
-      - name: Cleanup
+          git fetch --tags
+          git config --local core.autocrlf "false"
+          git config --local user.name ${{ secrets.GH_USER_NAME }}
+          git config --global user.email ${{ secrets.GH_USER_MAIL }}
+      - name: Prepare repository
         run: |
-          Remove-Item -Recurse -Force .\src
-          tree /f .
+          # cleanup rubbish from the past
+          Remove-Item -Recurse .\assets -ErrorAction SilentlyContinue
+          Remove-Item -Recurse .\.github -ErrorAction SilentlyContinue
+          Remove-Item .\.gitignore -ErrorAction SilentlyContinue
+          if (Test-Path .\assets) { throw ".\assets should not exist"}
+          if (Test-Path .\.github) { throw ".\assets should not exist"}
+          if (Test-Path .\.gitignore) { throw ".\assets should not exist"}
+
+      - name: Download Bulma
+        run: |
+          $Tags = git tag
+          Write-Output "Bulma tags:"
+          $tags | Format-Table | Out-Host
+          # get list of Bulma Releases
+          $BULMA_URL = "https://api.github.com/repos/jgthms/bulma"
+          $BulmaRelease = Invoke-RestMethod -FollowRelLink -Uri "$BULMA_URL/releases?per_page=100" | %{$_}| ForEach-Object {
+            Write-Output "testing release:"
+            $_ | FL | Out-Host
+            if ($_.tag_name) {
+              if ($Tags -contains "v$tag_name") {
+                Write-Output "already packed: Bulma $tag_name"
+              } else {
+                Write-Output "found new bulma tag: $tag_name"
+                [PSCustomObject]@{
+                  version = [version]$_.tag_name
+                  archive = [string]$_.assets.name
+                  download = [string]$_.assets.browser_download_url
+                }
+              }
+            }
+          } | Sort-Object -Property version | Select-Object -First 1
+           throw "OOPS"
+          if ($BulmaRelease) {
+            Write-Output "Downloading Bulma $($BulmaRelease.version)"
+            Invoke-WebRequest -Uri $BulmaRelease.download -OutFile $BulmaRelease.archive
+            $bulmaFolder = (Get-Item $BulmaRelease.archive).Basename
+
+            [void](New-Item -Type Directory ./assets -ErrorAction Stop)
+            if (-Not (Test-Path .\assets -PathType Container)) { throw "missing folder: assets"}
+            Expand-Archive -LiteralPath $BulmaRelease.archive -DestinationPath .\assets
+            if (Test-Path .\assets\__MACOSX) { Remove-Item .\assets\__MACOSX -ErrorAction SilentlyContinue -Recurse }
+            Rename-Item .\assets\$bulmaFolder "bulma"
+            if (-Not (Test-Path ./assets/bulma -PathType Container)) { throw "missing folder: assets/bulma folder"}
+            echo "BULMA_VERSION=$($BulmaRelease.version)" | Out-File $Env:GITHUB_ENV -Append -Encoding utf8
+            echo "BULMA_ARCHIVE=$($BulmaRelease.archive)" | Out-File $Env:GITHUB_ENV -Append -Encoding utf8
+            Write-Output "download successful: $($BulmaRelease.archive)"
+          } else {
+            echo "BULMA_VERSION='NONE'" | Out-File $Env:GITHUB_ENV -Append -Encoding utf8
+            Write-Output "No new Bulma Version found to pack"
+          }
+      - name: Create Release
+        if: ${{ env.BULMA_VERSION != 'NONE' }}
+        run: |
+          Write-Host "Creating Release for $ENV:BULMA_VERSION"
+          $BulmaVersion = "$ENV:BULMA_VERSION"
+          $BulmaArchive = "$ENV:BULMA_ARCHIVE"
+          git checkout -b "bulma-$BulmaVersion"
+          Remove-Item $BulmaArchive -ErrorAction SilentlyContinue
+          if (Test-Path $BulmaArchive { throw "failed to remove downloade archive: $BulmaArchive" }
+          git add .
+          git commit -m "add Bulma v$BulmaVersion"
+          git tag -a "v$BulmaVersion" -m "packed Bulma release v$BulmaVersion"
+          git push --tags
+          git checkout main
+          git branch -D "bulma-$BulmaVersion"
