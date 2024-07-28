@@ -72,7 +72,7 @@ jobs:
             if (Test-Path .\assets\__MACOSX) { Remove-Item .\assets\__MACOSX -ErrorAction SilentlyContinue -Recurse }
             Rename-Item .\assets\$bulmaFolder "bulma"
             if (-Not (Test-Path ./assets/bulma -PathType Container)) { throw "missing folder: assets/bulma folder"}
-            echo "BULMA_VERSION='$($BulmaRelease.version)'" | Out-File $Env:GITHUB_ENV -Append -Encoding utf8
+            echo "BULMA_VERSION=$($BulmaRelease.version)" | Out-File $Env:GITHUB_ENV -Append -Encoding utf8
           } else {
             echo "BULMA_VERSION='NONE'" | Out-File $Env:GITHUB_ENV -Append -Encoding utf8
           }
@@ -82,7 +82,10 @@ jobs:
           Write-Host "Creating Release for $ENV:BULMA_VERSION"
           $BulmaVersion = "$ENV:BULMA_VERSION"
           git checkout -b "bulma-$BulmaVersion"
-          git add ./assets ./README.md ./LICENSE ./go.mod
+          Remove-Item -Recurse .\.github -ErrorAction SilentlyContinue
+          Remove-Item .\.gitignore -ErrorAction SilentlyContinue
+          Remove-Item .\build.ps1 -ErrorAction SilentlyContinue
+          git add .
           git commit -m "add Bulma v$BulmaVersion"
           git tag -a "v$BulmaVersion" -m "packed Bulma release v$BulmaVersion"
           git push --tags
