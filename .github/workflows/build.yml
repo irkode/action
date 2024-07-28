@@ -81,7 +81,6 @@ jobs:
         run: |
           echo "----------------------"
           gpg --version
-          echo ${{ .github.actor }}
           gci env:
           echo "----------------------"
           throw "OOPS"
