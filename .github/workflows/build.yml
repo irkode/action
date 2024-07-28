@@ -48,16 +48,19 @@ jobs:
       - name: Download Bulma
         run: |
           $Tags = git tag
+          $tags | Format-Table
           # get list of Bulma Releases
           $BULMA_URL = "https://api.github.com/repos/jgthms/bulma"
           $BulmaRelease = Invoke-RestMethod -FollowRelLink -Uri "$BULMA_URL/releases?per_page=100" | %{$_}| ForEach-Object {
-            if (($_.tag_name) -and ($Tags -contains $tag_name)) {
-              Write-Output "already packed: Bulma $tag_name"
-            } else {
-               [PSCustomObject]@{
-                  version = [version]$_.tag_name
-                  archive = [string]$_.assets.name
-                  download = [string]$_.assets.browser_download_url
+            if ($_.tag_name) {
+              if ($Tags -contains $tag_name) {
+                Write-Output "already packed: Bulma $tag_name"
+              } else {
+                 [PSCustomObject]@{
+                    version = [version]$_.tag_name
+                    archive = [string]$_.assets.name
+                    download = [string]$_.assets.browser_download_url
+                }
               }
             }
           } | Sort-Object -Property version | Select-Object -First 1
