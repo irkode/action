@@ -32,10 +32,12 @@ jobs:
           git config --global user.email ${{ secrets.GH_USER_MAIL }}
       - name: Init scripts
         run: |
+          Write-Output "Forking Buildscript"
           [void](New-Item -Type Directory ./src -ErrorAction Stop)
           Copy-Item ./build.ps1 ./src -ErrorAction Stop
       - name: Prepare repository
         run: |
+          # cleanup rubbish from the past
           Remove-Item -Recurse .\assets -ErrorAction SilentlyContinue
           Remove-Item -Recurse .\.github -ErrorAction SilentlyContinue
           Remove-Item .\.gitignore -ErrorAction SilentlyContinue
@@ -53,7 +55,7 @@ jobs:
           $BULMA_URL = "https://api.github.com/repos/jgthms/bulma"
           $BulmaRelease = Invoke-RestMethod -FollowRelLink -Uri "$BULMA_URL/releases?per_page=100" | %{$_}| ForEach-Object {
             if ($_.tag_name) {
-              if ($Tags -contains $tag_name) {
+              if ($Tags -contains "v$tag_name") {
                 Write-Output "already packed: Bulma $tag_name"
               } else {
                  [PSCustomObject]@{
@@ -75,20 +77,24 @@ jobs:
             if (Test-Path .\assets\__MACOSX) { Remove-Item .\assets\__MACOSX -ErrorAction SilentlyContinue -Recurse }
             Rename-Item .\assets\$bulmaFolder "bulma"
             if (-Not (Test-Path ./assets/bulma -PathType Container)) { throw "missing folder: assets/bulma folder"}
-            Remove-Item $BulmaRelease.archive
             echo "BULMA_VERSION=$($BulmaRelease.version)" | Out-File $Env:GITHUB_ENV -Append -Encoding utf8
+            echo "BULMA_ARCHIVE=$($BulmaRelease.archive)" | Out-File $Env:GITHUB_ENV -Append -Encoding utf8
+            Write-Output "download successful: $($BulmaRelease.archive)"
           } else {
             echo "BULMA_VERSION='NONE'" | Out-File $Env:GITHUB_ENV -Append -Encoding utf8
+            Write-Output "No new Bulma Version found to pack"
           }
       - name: Create Release
         if: ${{ env.BULMA_VERSION != 'NONE' }}
         run: |
           Write-Host "Creating Release for $ENV:BULMA_VERSION"
           $BulmaVersion = "$ENV:BULMA_VERSION"
+          $BulmaArchive = "$ENV:BULMA_ARCHIVE"
           git checkout -b "bulma-$BulmaVersion"
           Remove-Item -Recurse .\.github -ErrorAction SilentlyContinue
           Remove-Item .\.gitignore -ErrorAction SilentlyContinue
           Remove-Item .\build.ps1 -ErrorAction SilentlyContinue
+          Remove-Item  $BulmaArchive -ErrorAction SilentlyContinue
           git add .
           git commit -m "add Bulma v$BulmaVersion"
           git tag -a "v$BulmaVersion" -m "packed Bulma release v$BulmaVersion"
