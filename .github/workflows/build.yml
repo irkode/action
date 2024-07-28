@@ -77,6 +77,14 @@ jobs:
           } else {
             echo "BULMA_VERSION='NONE'" | Out-File $Env:GITHUB_ENV -Append -Encoding utf8
           }
+      - name: GPG
+        run: |
+          echo "----------------------"
+          gpg --version
+          echo ${{ .github.actor }}
+          gci env:
+          echo "----------------------"
+          throw "OOPS"
 
       - name: Create Release
         if: ${{ env.BULMA_VERSION != 'NONE' }}
@@ -86,7 +94,7 @@ jobs:
           git checkout -b "bulma-$BulmaVersion"
           git add ./assets ./README.md ./LICENSE ./go.mod
           git commit -S -m "add Bulma v$BulmaVersion"
-          git tag -s -a "v$BulmaVersion" -m "packed Bulma release v$BulmaVersion"
-          git push --tags
+          # git tag -s -a "v$BulmaVersion" -m "packed Bulma release v$BulmaVersion"
+          # git push --tags
         env:
           GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
