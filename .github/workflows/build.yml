@@ -84,7 +84,11 @@ jobs:
           gci env:
           echo "----------------------"
           throw "OOPS"
-
+        env:
+          GH_USERNAME: ${{ secrets.GH_USERNAME }}
+          GH_USERMAIL: ${{ secrets.GH_USERMAIL }}
+          GH_SIGNINGKEY: ${{ secrets.GH_SIGNINGKEY }}
+          GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
       - name: Create Release
         if: ${{ env.BULMA_VERSION != 'NONE' }}
         run: |
