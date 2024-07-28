@@ -86,8 +86,6 @@ jobs:
           git commit -m "add Bulma v$BulmaVersion"
           git tag -a "v$BulmaVersion" -m "packed Bulma release v$BulmaVersion"
           git push --tags
-          
-      - name: Cleanup
-        run: |
           git checkout main
           git branch -D "bulma-$BulmaVersion"
+          
