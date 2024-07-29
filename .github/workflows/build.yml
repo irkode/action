@@ -97,7 +97,7 @@ jobs:
           Remove-Item .\.gitignore -ErrorAction SilentlyContinue
           Remove-Item .\build.ps1 -ErrorAction SilentlyContinue
           Remove-Item $BulmaArchive -ErrorAction SilentlyContinue
-          if (Test-Path $BulmaArchive { throw "faild to remove archive" }
+          if (Test-Path $BulmaArchive) { throw "faild to remove archive" }
           git add .
           git commit -m "add Bulma v$BulmaVersion"
           git tag -a "v$BulmaVersion" -m "packed Bulma release v$BulmaVersion"
