@@ -50,7 +50,8 @@ jobs:
       - name: Download Bulma
         run: |
           $Tags = git tag
-          $tags | Format-Table
+          Write-Output "Bulma tags:"
+          $tags | Format-Table | Out-Host
           # get list of Bulma Releases
           $BULMA_URL = "https://api.github.com/repos/jgthms/bulma"
           $BulmaRelease = Invoke-RestMethod -FollowRelLink -Uri "$BULMA_URL/releases?per_page=100" | %{$_}| ForEach-Object {
@@ -58,10 +59,11 @@ jobs:
               if ($Tags -contains "v$tag_name") {
                 Write-Output "already packed: Bulma $tag_name"
               } else {
-                 [PSCustomObject]@{
-                    version = [version]$_.tag_name
-                    archive = [string]$_.assets.name
-                    download = [string]$_.assets.browser_download_url
+                Write-Output "found new bulma tag: $tag_name"
+                [PSCustomObject]@{
+                  version = [version]$_.tag_name
+                  archive = [string]$_.assets.name
+                  download = [string]$_.assets.browser_download_url
                 }
               }
             }
@@ -84,6 +86,7 @@ jobs:
             echo "BULMA_VERSION='NONE'" | Out-File $Env:GITHUB_ENV -Append -Encoding utf8
             Write-Output "No new Bulma Version found to pack"
           }
+          throw "OOPS"
       - name: Create Release
         if: ${{ env.BULMA_VERSION != 'NONE' }}
         run: |
